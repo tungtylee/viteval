@@ -32,6 +32,21 @@ if [[ -z $env_exists ]]; then
     cd MobileSAM; pip install -e .
     cd ..
 
+    mkdir weights
+    link_path="weights/mobile_sam.pt"
+    # Check soft link
+    if [ -L "$link_path" ]; then
+        echo "Symbolic link $link_path exists."
+        if [ -e "$link_path" ]; then
+            echo "Symbolic link $link_path points to an existing file."
+        else
+            echo "Symbolic link $link_path points to a non-existing file."
+        fi
+    else
+        echo "Symbolic link $link_path does not exist."
+        ln -s `pwd`/MobileSAM/$link_path $link_path
+    fi
+
     # pip install xformers
     pip install psutil
 else
