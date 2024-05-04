@@ -36,22 +36,46 @@ predictor = SamPredictor(mobile_sam)
 embd = [0] * 51
 pred = [0] * 51
 
-# Segment with Prompts
-for i in range(51):
-    s = time.time()
-    c = np.random.rand(*image.shape).astype(image.dtype)
-    predictor.set_image(c)
-    e = time.time()
-    embd[i] = e-s
+if device == "cpu":
+    # Segment with Prompts
+    for i in range(51):
+        s = time.time()
+        c = np.random.rand(*image.shape).astype(image.dtype)
+        predictor.set_image(c)
+        e = time.time()
+        embd[i] = e-s
 
-    s = time.time()
-    masks, scores, logits = predictor.predict(
-        point_coords=input_point,
-        point_labels=input_label,
-        multimask_output=True,
-    )
-    e = time.time()
-    pred[i] = e-s
+        s = time.time()
+        masks, scores, logits = predictor.predict(
+            point_coords=input_point,
+            point_labels=input_label,
+            multimask_output=True,
+        )
+        e = time.time()
+        pred[i] = e-s
+else:
+    t1 = torch.cuda.Event(enable_timing=True)
+    t2 = torch.cuda.Event(enable_timing=True)
+    # Segment with Prompts
+    for i in range(51):
+        t1.record()
+        c = np.random.rand(*image.shape).astype(image.dtype)
+        predictor.set_image(c)
+        t2.record()
+        torch.cuda.synchronize()
+        embd[i] = t1.elapsed_time(t2)/1000
+
+        t1.record()
+        masks, scores, logits = predictor.predict(
+            point_coords=input_point,
+            point_labels=input_label,
+            multimask_output=True,
+        )
+        t2.record()
+        torch.cuda.synchronize()
+        pred[i] = t1.elapsed_time(t2)/1000
+
+
 
 print("elasped_time", "avg", "first")
 print("embd", np.mean(embd[1:]), embd[0])

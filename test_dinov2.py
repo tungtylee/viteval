@@ -15,7 +15,7 @@ else:
 
 # I have used large model, & suggest the large or gaint model.
 import torch
-print(torch.hub.list('facebookresearch/dinov2'))
+# print(torch.hub.list('facebookresearch/dinov2'))
 
 import requests
 from PIL import Image
@@ -77,15 +77,31 @@ def run_imgfeatures():
         return total_features
 
 import time
-for i in range(11):
-    t1 = time.perf_counter()
-    total_features = run_imgfeatures()
-    t2 = time.perf_counter()
-    embd.append(t2-t1)
+import pickle
+if device == "cpu":
+    for i in range(11):
+        t1 = time.perf_counter()
+        total_features = run_imgfeatures()
+        t2 = time.perf_counter()
+        embd.append(t2-t1)
+        # with open(f"{device}_{modelver}_{i}.pkl", "wb") as pkl:
+        #     pickle.dump(total_features, pkl)
+else:
+    t1 = torch.cuda.Event(enable_timing=True)
+    t2 = torch.cuda.Event(enable_timing=True)
+    for i in range(11):
+        t1.record()
+        total_features = run_imgfeatures()
+        t2.record()
+        torch.cuda.synchronize()
+        embd.append(t1.elapsed_time(t2))
+        # with open(f"{device}_{modelver}_{i}.pkl", "wb") as pkl:
+        #     pickle.dump(total_features, pkl)
 
 print(device, modelver)
 print("elasped_time", "avg10", "first")
 print("dinov2", np.mean(embd[1:]), embd[0])
+print("embd", embd)
 
 import psutil
 import os
