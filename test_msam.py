@@ -7,7 +7,7 @@ import sys
 import time
 
 model_type = "vit_t"
-sam_checkpoint = "./weights/mobile_sam.pt"
+sam_checkpoint = "MobileSAM/weights/mobile_sam.pt"
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 if len(sys.argv) > 1:
